@@ -1,0 +1,42 @@
+// Schéma de référence pour OTK (backend).
+// NOTE: l'architecture initiale prévoyait un backend Spring Boot (JPA/Hibernate).
+// Ce fichier Prisma est fourni tel quel comme spec/point de départ ; à adapter
+// en entités JPA si le backend reste Spring Boot, ou à utiliser directement
+// si le backend bascule sur Node/Prisma. A trancher avec OTK.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum StudentStatus {
+  PENDING_TEST
+  PENDING_PAYMENT
+  ACTIVE
+}
+
+model Student {
+  id          String        @id @default(cuid())
+  fullName    String
+  whatsapp    String
+  level       String?
+  status      StudentStatus @default(PENDING_TEST)
+  paymentLink PaymentLink?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model PaymentLink {
+  id          String   @id @default(cuid())
+  token       String   @unique
+  student     Student  @relation(fields: [studentId], references: [id])
+  studentId   String   @unique
+  studentName String
+  amount      Int // 25000
+  status      String // PENDING, PAID, ACTIVE
+  createdAt   DateTime @default(now())
+}
