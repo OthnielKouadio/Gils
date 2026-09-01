@@ -13,8 +13,11 @@ frontend/out/
 
 # production builds
 frontend/build
-backend/target/
-backend/build/
+backend/dist/
+
+# prisma local db
+backend/prisma/*.db
+backend/prisma/*.db-journal
 
 # misc
 .DS_Store

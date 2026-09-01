@@ -6,6 +6,7 @@ import { students } from "@/lib/mock-data/students";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { List, Pencil, Save, Printer, Download, FileText } from "lucide-react";
 
 type Mode = "liste" | "voir" | "modifier";
 
@@ -71,25 +72,28 @@ export default function BulletinPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-100 text-orange-600">
+          <FileText size={18} />
+        </div>
         <h1 className="text-2xl font-bold text-slate-900">Module Bulletin</h1>
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2 print:hidden">
         <Button variant={mode === "liste" ? "secondary" : "ghost"} onClick={backToList}>
-          Liste
+          <List size={15} /> Liste
         </Button>
         <Button variant="ghost" disabled={!selected || mode === "modifier"} onClick={startEdit}>
-          Modifier
+          <Pencil size={15} /> Modifier
         </Button>
         <Button variant="ghost" disabled={mode !== "modifier"} onClick={saveEdit}>
-          Enregistrer
+          <Save size={15} /> Enregistrer
         </Button>
         <Button variant="ghost" disabled={!selected} onClick={() => window.print()}>
-          Imprimer
+          <Printer size={15} /> Imprimer
         </Button>
         <Button variant="ghost" disabled={!selected} onClick={() => selected && exportCsv(selected)}>
-          Exporter
+          <Download size={15} /> Exporter
         </Button>
       </div>
 

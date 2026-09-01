@@ -2,6 +2,7 @@ import { requireRole } from "@/lib/roles";
 import { getFinanceEntries, getFinanceSummary } from "@/lib/data/finance";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Wallet, Lock, ArrowUpRight, ArrowDownRight } from "lucide-react";
 
 function formatFcfa(amount: number) {
   return `${amount.toLocaleString("fr-FR")} FCFA`;
@@ -14,8 +15,15 @@ export default async function FinanceCacheePage() {
   return (
     <div>
       <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-100 text-orange-600">
+          <Wallet size={18} />
+        </div>
         <h1 className="text-2xl font-bold text-slate-900">Finance Cachée</h1>
-        <Badge tone="red">Accès Restreint : Boss uniquement</Badge>
+        <Badge tone="red">
+          <span className="inline-flex items-center gap-1">
+            <Lock size={11} /> Accès Restreint : Boss uniquement
+          </span>
+        </Badge>
       </div>
       <p className="mt-1 text-sm text-slate-500">Répartition confidentielle des revenus entre partenaires.</p>
 
@@ -56,7 +64,10 @@ export default async function FinanceCacheePage() {
                     entry.amount < 0 ? "text-red-600" : "text-emerald-600"
                   }`}
                 >
-                  {formatFcfa(entry.amount)}
+                  <span className="inline-flex items-center gap-1">
+                    {entry.amount < 0 ? <ArrowDownRight size={13} /> : <ArrowUpRight size={13} />}
+                    {formatFcfa(entry.amount)}
+                  </span>
                 </td>
               </tr>
             ))}
