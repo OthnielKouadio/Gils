@@ -2,18 +2,31 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { GraduationCap, User, Phone, ArrowRight } from "lucide-react";
+import { GraduationCap, User, Phone, ArrowRight, Loader2 } from "lucide-react";
+import { createStudent } from "@/lib/api";
 
 export default function Inscription() {
   const router = useRouter();
   const [nom, setNom] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    sessionStorage.setItem("gils_nom", nom);
-    sessionStorage.setItem("gils_whatsapp", whatsapp);
-    router.push("/test-de-niveau");
+    setLoading(true);
+    setError(null);
+    try {
+      const student = await createStudent(nom, whatsapp);
+      sessionStorage.setItem("gils_student_id", student.id);
+      sessionStorage.setItem("gils_nom", nom);
+      sessionStorage.setItem("gils_whatsapp", whatsapp);
+      router.push("/test-de-niveau");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Impossible de créer l'inscription. Réessaie.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -54,12 +67,14 @@ export default function Inscription() {
               />
             </div>
           </div>
+          {error && <p className="text-sm text-red-600">{error}</p>}
           <button
             type="submit"
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 py-3 text-sm font-bold text-white transition hover:bg-slate-800"
+            disabled={loading}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 py-3 text-sm font-bold text-white transition hover:bg-slate-800 disabled:opacity-60"
           >
-            Commencer le test de niveau
-            <ArrowRight size={16} />
+            {loading ? "Création..." : "Commencer le test de niveau"}
+            {loading ? <Loader2 size={16} className="animate-spin" /> : <ArrowRight size={16} />}
           </button>
         </form>
       </div>

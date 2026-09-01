@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma";
+import { logAction } from "../lib/audit";
 
 export const paymentsRouter = Router();
 
@@ -25,6 +26,8 @@ paymentsRouter.post("/:token/pay", async (req, res) => {
     where: { id: link.studentId },
     data: { status: "ACTIVE" },
   });
+
+  await logAction("PAYMENT_CONFIRMED", "public", student.id, { token: req.params.token, amount: link.amount });
 
   res.json({ paymentLink: updatedLink, student });
 });

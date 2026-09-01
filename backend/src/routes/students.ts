@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma";
 import { INSCRIPTION_FEE, levelFromTotal, randomToken } from "../lib/payment";
+import { logAction } from "../lib/audit";
+import { requireAuth, requireRole } from "../middleware/auth";
 
 export const studentsRouter = Router();
 
@@ -13,7 +15,14 @@ studentsRouter.post("/", async (req, res) => {
   const student = await prisma.student.create({
     data: { fullName, whatsapp, status: "PENDING_TEST" },
   });
+  await logAction("STUDENT_CREATED", "public", student.id, { fullName });
   res.status(201).json(student);
+});
+
+// Liste complète — réservée Boss/Staff (EleveController CRUD).
+studentsRouter.get("/", requireAuth, requireRole("BOSS", "STAFF"), async (_req, res) => {
+  const students = await prisma.student.findMany({ orderBy: { createdAt: "desc" } });
+  res.json(students);
 });
 
 studentsRouter.get("/:id", async (req, res) => {
@@ -52,10 +61,29 @@ studentsRouter.post("/:id/test-result", async (req, res) => {
     },
   });
 
+  await logAction("TEST_SUBMITTED", "public", student.id, { totalScore, level });
+
   res.json({ student, paymentLink });
 });
 
-studentsRouter.get("/", async (_req, res) => {
-  const students = await prisma.student.findMany({ orderBy: { createdAt: "desc" } });
-  res.json(students);
+// Mise à jour manuelle (niveau, coordonnées) — Boss/Staff.
+studentsRouter.put("/:id", requireAuth, requireRole("BOSS", "STAFF"), async (req, res) => {
+  const { fullName, whatsapp, level, status } = req.body ?? {};
+  const student = await prisma.student.update({
+    where: { id: req.params.id },
+    data: {
+      ...(fullName !== undefined && { fullName }),
+      ...(whatsapp !== undefined && { whatsapp }),
+      ...(level !== undefined && { level }),
+      ...(status !== undefined && { status }),
+    },
+  });
+  await logAction("STUDENT_UPDATED", req.user!.email, student.id, req.body);
+  res.json(student);
+});
+
+studentsRouter.delete("/:id", requireAuth, requireRole("BOSS", "STAFF"), async (req, res) => {
+  await prisma.student.delete({ where: { id: req.params.id } });
+  await logAction("STUDENT_DELETED", req.user!.email, req.params.id);
+  res.status(204).send();
 });

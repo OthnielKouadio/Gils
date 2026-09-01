@@ -1,7 +1,8 @@
 "use client"
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { BookOpen, MessageCircle, Headphones, Mic, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { BookOpen, MessageCircle, Headphones, Mic, ArrowRight, CheckCircle2, Loader2 } from 'lucide-react';
+import { submitTestResult } from '@/lib/api';
 
 const steps = [
   { id: 1, label: "Grammaire", icon: BookOpen },
@@ -9,9 +10,39 @@ const steps = [
   { id: 3, label: "Audio", icon: Headphones },
 ];
 
+// Notes de démo : la correction automatique des réponses vocales / de la dictée
+// n'est pas encore implémentée (pas de pipeline speech-to-text). En attendant,
+// on envoie des scores fixes au backend, qui calcule le total et le niveau.
+const DEMO_SCORES = { grammarScore: 2, topicScore: 2.5, audioScore: 6.5 };
+
 export default function TestDeNiveau() {
   const router = useRouter();
   const [step, setStep] = useState(1);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleFinish() {
+    const studentId = sessionStorage.getItem("gils_student_id");
+    if (!studentId) {
+      setError("Session expirée, merci de recommencer depuis /inscription.");
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      const { student, paymentLink } = await submitTestResult(studentId, DEMO_SCORES);
+      sessionStorage.setItem("gils_niveau", student.level ?? "Débutant");
+      sessionStorage.setItem("gils_total", String(student.totalScore ?? 0));
+      sessionStorage.setItem("gils_grammar", String(student.grammarScore ?? 0));
+      sessionStorage.setItem("gils_topic", String(student.topicScore ?? 0));
+      sessionStorage.setItem("gils_audio", String(student.audioScore ?? 0));
+      sessionStorage.setItem("gils_payment_token", paymentLink.token);
+      router.push('/resultat');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Impossible d'envoyer le résultat du test.");
+      setSubmitting(false);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
@@ -93,8 +124,14 @@ export default function TestDeNiveau() {
             {[1,2,3,4,5,6,7,8,9,10].map(i=>(
               <input key={i} placeholder={`Phrase ${i}`} className="w-full border border-slate-300 p-2 rounded-lg mt-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100" />
             ))}
-            <button onClick={()=>router.push('/resultat')} className="mt-6 flex w-full items-center justify-center gap-2 bg-emerald-600 text-white py-3 rounded-lg font-bold hover:bg-emerald-700">
-              TERMINER LE TEST <CheckCircle2 size={18} />
+            {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+            <button
+              onClick={handleFinish}
+              disabled={submitting}
+              className="mt-6 flex w-full items-center justify-center gap-2 bg-emerald-600 text-white py-3 rounded-lg font-bold hover:bg-emerald-700 disabled:opacity-60"
+            >
+              {submitting ? "Envoi en cours..." : "TERMINER LE TEST"}
+              {submitting ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle2 size={18} />}
             </button>
           </div>
         )}

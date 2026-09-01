@@ -21,7 +21,7 @@ export default function LoginPage() {
     const res = await signIn("credentials", { email, password, redirect: false });
     setLoading(false);
     if (res?.error) {
-      setError("Email ou mot de passe incorrect.");
+      setError("Email ou mot de passe incorrect (ou backend indisponible sur " + (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000") + ").");
       return;
     }
     router.push("/");
@@ -90,7 +90,7 @@ export default function LoginPage() {
         </form>
 
         <div className="mt-6 space-y-2 border-t border-slate-100 pt-4 text-xs text-slate-500">
-          <p>Comptes de démonstration (mock, en attendant l&apos;API d&apos;Othniel) :</p>
+          <p>Comptes de démonstration (vérifiés via l&apos;API backend d&apos;Othniel) :</p>
           <div className="flex gap-2">
             <button
               type="button"

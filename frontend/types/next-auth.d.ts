@@ -10,15 +10,18 @@ declare module "next-auth" {
       email?: string | null;
       role: UserRole;
     };
+    accessToken?: string;
   }
 
   interface User {
     role: UserRole;
+    accessToken: string;
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
     role: UserRole;
+    accessToken?: string;
   }
 }
