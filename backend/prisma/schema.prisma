@@ -1,0 +1,68 @@
+// Backend Gil's English School — Node.js + Prisma (confirmé avec OTK, remplace le plan initial Spring Boot).
+// SQLite en local pour aller vite ; il suffira de changer `provider` + `DATABASE_URL`
+// pour passer sur MySQL/PostgreSQL en production (voir docker-compose.yml).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Student {
+  id           String        @id @default(cuid())
+  fullName     String
+  whatsapp     String
+  level        String?
+  grammarScore Float?
+  topicScore   Float?
+  audioScore   Float?
+  totalScore   Float?
+  status       String        @default("PENDING_TEST") // PENDING_TEST | PENDING_PAYMENT | ACTIVE
+  paymentLink  PaymentLink?
+  certificates Certificate[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model PaymentLink {
+  id          String   @id @default(cuid())
+  token       String   @unique
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId   String   @unique
+  studentName String
+  amount      Int // 25000
+  status      String   @default("PENDING") // PENDING | PAID
+  createdAt   DateTime @default(now())
+}
+
+// Comptes internes Boss / Staff (module Auth d'OTK).
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String // hash bcrypt
+  name      String
+  role      String // BOSS | STAFF
+  createdAt DateTime @default(now())
+}
+
+// Module Certificat d'OTK — GILS-2026-XXX, PDF généré à la demande.
+model Certificate {
+  id        String   @id @default(cuid())
+  number    String   @unique // ex: GILS-2026-0001
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId String
+  issuedAt  DateTime @default(now())
+}
+
+// Module Piste Audit d'OTK — journal des actions sensibles.
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String // STUDENT_CREATED | TEST_SUBMITTED | PAYMENT_CONFIRMED | CERTIFICATE_ISSUED | LOGIN_SUCCESS | LOGIN_FAILED | STUDENT_UPDATED | STUDENT_DELETED
+  actor     String // email de l'utilisateur, ou "public" pour le parcours élève
+  targetId  String?
+  metadata  String? // JSON stringifié, détails additionnels
+  createdAt DateTime @default(now())
+}
